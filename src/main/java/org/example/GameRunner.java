@@ -1,50 +1,52 @@
 package org.example;
 
+import java.io.File;
 import java.util.Scanner;
 
 public class GameRunner {
 
     public static void main(String[] args) {
+        String filepath = "path/to/your/CasinoJazz.wav";
 
-        String filepath = "CasinoJazz.wav";
-        PlayMusic music = new PlayMusic();
-        music.playMusic(filepath);
+        File musicFile = new File(filepath);
+        if (musicFile.exists()) {
+            PlayMusic music = new PlayMusic();
+            music.playMusic(filepath);
+        } else {
+            System.out.println("Music file not found at: " + filepath);
+        }
 
         Scanner sc = new Scanner(System.in);
-
 
         Deck deck = new Deck();
         deck.shuffle();
 
+        Player player = new Player(1000);
+        Player dealer = new Player(0);
 
-        Hand playerHand = new Hand();
-        Hand dealerHand = new Hand();
+        int defaultBet = 1000;
+        player.loseBet(defaultBet);
 
-
-        playerHand.addCard(deck.dealNextCard());
-        playerHand.addCard(deck.dealNextCard());
-        dealerHand.addCard(deck.dealNextCard());
-        dealerHand.addCard(deck.dealNextCard());
+        player.addCardToHand(deck.dealNextCard());
+        player.addCardToHand(deck.dealNextCard());
+        dealer.addCardToHand(deck.dealNextCard());
+        dealer.addCardToHand(deck.dealNextCard());
 
         boolean playerStands = false;
         boolean playerBusts = false;
 
-
         while (!playerStands && !playerBusts) {
             System.out.println("Player's hand:");
-            playerHand.printHand();
+            player.printHand();
             System.out.println("Dealer's hand:");
-            dealerHand.printHand(true);
+            dealer.printHand(true);
 
-            System.out.println("Choose an action: 1) Hit 2) Stand");
-            int action = sc.nextInt();
-
-            if (action == 1) {
-                playerHand.addCard(deck.dealNextCard());
-                if (playerHand.calculateTotal() > 21) {
+            if (player.wantsToHit()) {
+                player.addCardToHand(deck.dealNextCard());
+                if (player.getHandTotal() > 21) {
                     playerBusts = true;
                 }
-            } else if (action == 2) {
+            } else {
                 playerStands = true;
             }
         }
@@ -52,27 +54,33 @@ public class GameRunner {
         if (playerBusts) {
             System.out.println("Player busts! Dealer wins.");
         } else {
-            while (dealerHand.calculateTotal() < 17) {
-                dealerHand.addCard(deck.dealNextCard());
+            while (dealer.getHandTotal() < 17) {
+                dealer.addCardToHand(deck.dealNextCard());
             }
 
             System.out.println("Dealer's hand:");
-            dealerHand.printHand(false);
+            dealer.printHand(false);
 
-            int playerTotal = playerHand.calculateTotal();
-            int dealerTotal = dealerHand.calculateTotal();
+            int playerTotal = player.getHandTotal();
+            int dealerTotal = dealer.getHandTotal();
 
             if (dealerTotal > 21 || playerTotal > dealerTotal) {
                 System.out.println("Player wins!");
+                player.winBet(defaultBet * 2);
             } else if (playerTotal < dealerTotal) {
-                System.out.println("Dealer wins!");
+                System.out.println("Dealer wins.");
             } else {
-                System.out.println("It's a tie!");
+                System.out.println("It's a tie.");
+                player.winBet(defaultBet);
             }
         }
 
+        System.out.println("Player's balance: " + player.getBalance());
         sc.close();
     }
 }
+
+
+
 
 
